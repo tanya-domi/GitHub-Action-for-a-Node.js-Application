@@ -92,13 +92,6 @@ jobs:
           path: test-results.xml
           retention-days: 5
 
-
-  containerization:
-    name: Containerization
-    needs: [unit-testing, code-coverage]
-    runs-on: ubuntu-latest
-
-   
   docker:
     name: Containerization
     needs: [unit-testing, code-coverage]
