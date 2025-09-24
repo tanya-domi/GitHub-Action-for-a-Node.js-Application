@@ -90,7 +90,7 @@ jobs:
           retention-days: 5
 
   publish-build:
-    runs-on: untuntu-latest
+    runs-on: ubuntu-latest
     needs: [unit-testing, code-coverage]
  
     steps:
