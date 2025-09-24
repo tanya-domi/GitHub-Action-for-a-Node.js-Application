@@ -122,7 +122,7 @@ jobs:
           context: .
           load: true
           push: false
-          tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
 
 
       - name: Run Container and Test `/live` Endpoint
