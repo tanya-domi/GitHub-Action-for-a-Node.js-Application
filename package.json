@@ -13,6 +13,7 @@
     "check-coverage": true,
     "lines": 90
   },
+  "publishConfig":{"registry":"http://16.171.171.222:8081/artifactory/api/npm/solar-system-local/"},
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",

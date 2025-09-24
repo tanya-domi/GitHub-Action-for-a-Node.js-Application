@@ -1,4 +1,4 @@
-name: Solar System Workflow
+name: "Solar System Workflow"
 
 
 on:
@@ -18,10 +18,10 @@ jobs:
     name: Unit Testing
     strategy:
       matrix:
-        nodejs_version: [18, 19, 20]
+        nodejs_version: [18, 20]
         operating_system: [ubuntu-latest, macos-latest]
         exclude:
-        - nodejs_version: 20
+        - nodejs_version: 18
           operating_system: macos-latest
     runs-on: ${{ matrix.operating_system }}
 
@@ -45,7 +45,7 @@ jobs:
         run: npm install
 
       - name: Unit Testing
-        run: npm test
+        run: npm test --reporter mocha-junit-reporter --reporter-options mochaFile=test-results.xml
 
       - name: Archive Test Results
         if: always()
@@ -78,10 +78,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run unit tests
-        run: npm test
-
-      - name: Check Code Coverage
+      - name: Run Tests and Collect Coverage
         continue-on-error: true
         run: npm run coverage
 
@@ -89,8 +86,68 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: test-results.xml
+          path: coverage/
           retention-days: 5
+
+  publish-build:
+    runs-on: untuntu-latest
+    needs: [unit-testing, code-coverage]
+ 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clean npmrc
+        run: rm -f ~/.npmrc
+
+      - name: Setup JFrog CLI OIDC
+        uses:  jfrog/setup-jfrog-cli@v4
+        id: setup-cli
+        env:  
+          JF_URL: ${{ vars.JF_URL }}
+          JF_GIT_TOKEN: ${{ secrets._GITHUB_TOKEN }}
+        with:
+          oidc-provider-name: github-jfrog-intragration
+          oidc-audience: my-aud
+           
+      - name: Setup Node npm
+        uses: actions/setup-node@v4
+
+      - name: Set CLI Config
+        run: | 
+          jf npm-config --global=true --repo-resolve=solar-system-local --repo-deploy=solar-system-local
+          
+      - name: Install Deps
+        run: jf npm install
+         
+      - name: Publish Package to Artifactory
+        run: jf npm publish
+
+      - name: Download Test Results Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Mocha-Test-Result-18-ubuntu-latest
+          path: reports/unit-tests
+
+      - name: Download Coverage Report Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: reports/coverage
+
+      - name: Upload Test Results & Coverage to Artifactory
+        run: |
+          jf rt u "reports/unit-tests/*" "qa-reports/unit-tests/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
+          jf rt u "reports/coverage/*" "qa-reports/coverage/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
+         
+      - name: Publish Build info With JFrog CLI
+        run: |
+          # Collect environment variables for the build
+          jf rt build-collect-env
+          # Collect VCS details from git and add them to the build
+          jf rt build-add-git
+          # Publish build info
+          jf rt build-publish
 
   docker:
     name: Containerization
@@ -165,3 +222,5 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+
+        
