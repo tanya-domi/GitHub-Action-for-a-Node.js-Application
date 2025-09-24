@@ -7,7 +7,7 @@ on:
     branches:
       - main
       - 'feature/*'
-      
+
 permissions:
   id-token: write 
   contents: write 
@@ -16,6 +16,7 @@ env:
   MONGO_URI: ${{ secrets.MONGO_URI }}
   MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
   MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+  JFROG_CLI_LOG_LEVEL: DEBUG
 
 jobs:
   unit-testing:
