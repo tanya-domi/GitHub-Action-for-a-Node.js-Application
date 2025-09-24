@@ -111,9 +111,9 @@ jobs:
         env:  
           JF_URL: ${{ vars.JF_URL }}
           JF_GIT_TOKEN: ${{ secrets._GITHUB_TOKEN }}
-        # with:
-        #   oidc-provider-name: github-jfrog-intragration
-        #   oidc-audience: my-aud
+        with:
+          oidc-provider-name: github-jfrog-intragration
+          oidc-audience: my-aud
            
       - name: Setup Node npm
         uses: actions/setup-node@v4
