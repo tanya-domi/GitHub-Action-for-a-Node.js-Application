@@ -13,8 +13,6 @@ env:
   MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
   MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
 
-
-
 jobs:
   unit-testing:
     name: Unit Testing
@@ -31,26 +29,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-
       - name: Setup Node.js Version - ${{ matrix.nodejs_version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.nodejs_version }}
-          check-latest: true 
 
       - name: Install Dependencies
         run: npm install
 
-
-      - name: Run Unit Tests
-        id: nodejs-unit-testing
+      - name: Unit Testing
         run: npm test
 
-      - name: Archive Test Results
+      - name: Archive Test Result
         uses: actions/upload-artifact@v4
-        # with:
-        #   name: Mocha-Test-Result
-        #   path: test-results.xml
+
+    #   - name: Archive Test Results
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: Mocha-Test-Result
+    #       path: test-results.xml
   
   
 #   code-coverage:
