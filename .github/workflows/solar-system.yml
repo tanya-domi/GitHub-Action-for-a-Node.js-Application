@@ -19,20 +19,27 @@ jobs:
     strategy:
       matrix:
         nodejs_version: [18, 19, 20]
-        operating_system: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         exclude:
         - nodejs_version: 18
           operating_system: macos-latest
-    runs-on: ${{ matrix.operating_system }}
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+
       - name: Setup Node.js Version - ${{ matrix.nodejs_version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.nodejs_version }}
+
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Install Dependencies
         run: npm install
@@ -41,9 +48,10 @@ jobs:
         run: npm test
 
       - name: Archive Test Results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Mocha-Test-Result-${{ matrix.nodejs_version }}-${{ matrix.operating_system }}
+          name: Mocha-Test-Result-${{ matrix.nodejs_version }}-${{ matrix.os }}
           path: test-results.xml
           retention-days: 5
   
@@ -61,6 +69,12 @@ jobs:
         with:
           node-version: 18
 
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
         run: npm install
 
@@ -71,8 +85,9 @@ jobs:
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: Code-Coverage-Result
-          path: coverage
+          name: coverage-report
+          path: test-results.xml
           retention-days: 5
     
+
 
