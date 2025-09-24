@@ -109,11 +109,11 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t dts81:${{ github.sha }} .
+          docker build -t dts81/solar-system:${{ github.sha }} .
           
       - name: Push Docker Image
         run: |
-          docker push dts81:${{ github.sha }}
+          docker push dts81/solar-system:${{ github.sha }}
     
 #   docker:
 #     name: Containerization
