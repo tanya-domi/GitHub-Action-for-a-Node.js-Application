@@ -48,7 +48,7 @@ jobs:
 
       - name: Archive Test Results
         if: steps.nodejs-unit-testing.outcome == 'failure' || steps.nodejs-unit-testing.outcome == 'success'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Mocha-Test-Result
           path: test-results.xml
