@@ -232,10 +232,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
 
-      - name: Update K8s manifests with image tag
-        run: |
-          sed -i "s|<commit-sha>|${{ github.sha }}|g" kubernetes/development/deployment.yaml
-
+      
   dev-deploy:
     runs-on: ubuntu-latest
     needs: push-image
@@ -258,7 +255,11 @@ jobs:
 
       - name: Configure kubectl
         run: aws eks --region eu-north-1 update-kubeconfig --name hr-dev-eks-cloud
-       
+      
+      - name: Update K8s manifests with image tag
+        run: |
+          sed -i "s|<commit-sha>|${{ github.sha }}|g" kubernetes/development/deployment.yaml
+
       - name: Verify updated manifests
         run: |
           cat kubernetes/development/*.yaml
@@ -274,16 +275,16 @@ jobs:
         run: |
           kubectl apply -f kubernetes/development
 
-      - name: Fetch ALB Host
-        id: fetch-alb-host
-        run: |
-          for i in {1..20}; do
-            HOST=$(kubectl -n dev get ingress solar-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            if [ -n "$HOST" ]; then break; fi
-            echo "Waiting for ALB DNS..."
-            sleep 15
-          done
-          echo "alb-host=$HOST" >> $GITHUB_OUTPUT
+      # # - name: Fetch ALB Host
+      # #   id: fetch-alb-host
+      # #   run: |
+      # #     for i in {1..20}; do
+      # #       HOST=$(kubectl -n dev get ingress solar-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+      # #       if [ -n "$HOST" ]; then break; fi
+      # #       echo "Waiting for ALB DNS..."
+      # #       sleep 15
+      #     done
+      #     echo "alb-host=$HOST" >> $GITHUB_OUTPUT
 
   # integration-testing:
   #   name: Dev Integration Testing
