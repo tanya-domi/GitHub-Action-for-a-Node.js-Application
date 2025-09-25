@@ -1,6 +1,5 @@
 name: Solar System Workflow
 
-
 on:
   workflow_dispatch:
   push:
@@ -23,11 +22,11 @@ jobs:
     name: Unit Testing
     strategy:
       matrix:
-        nodejs_version: [18, 20]
+        nodejs_version: [18]
         operating_system: [ubuntu-latest, macos-latest]
-        exclude:
-        - nodejs_version: 18
-          operating_system: macos-latest
+        # exclude:
+        # - nodejs_version: 20
+        #   operating_system: macos-latest
     runs-on: ${{ matrix.operating_system }}
 
     steps:
@@ -111,6 +110,7 @@ jobs:
         env:  
           JF_URL: ${{ vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+          
         #   # JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # with:
         #   oidc-provider-name: github-jfrog-intragration 
@@ -143,8 +143,8 @@ jobs:
 
       - name: Upload Test Results & Coverage to Artifactory
         run: |
-          jf rt u "reports/unit-tests/*" "qa-reports/unit-tests/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
-          jf rt u "reports/coverage/*" "qa-reports/coverage/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
+          jf rt u "reports/unit-tests/*" "local-solar-system/unit-tests/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
+          jf rt u "reports/coverage/*" "local-solar-system/coverage/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
          
       - name: Publish Build info With JFrog CLI
         run: |
