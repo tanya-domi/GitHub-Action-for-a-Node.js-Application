@@ -274,7 +274,7 @@ jobs:
         id: fetch-alb-host
         run: |
           for i in {1..20}; do
-            HOST=$(kubectl get ingress solar-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            HOST=$(kubectl -n dev get ingress solar-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             if [ -n "$HOST" ]; then break; fi
             echo "Waiting for ALB DNS..."
             sleep 15
