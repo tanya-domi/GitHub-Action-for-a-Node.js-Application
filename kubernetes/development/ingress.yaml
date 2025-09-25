@@ -1,24 +1,28 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    kubernetes.io/tls-acme: "true"
   name: solar-system
   namespace: ${NAMESPACE}
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:381492137122:certificate/4a115c36-439e-4981-8be2-6020324e3400
 spec:
-    rules:
-    - host: solar-system-${NAMESPACE}.${INGRESS_IP}.nip.io
+  ingressClassName: alb
+  rules:
+    - host: solar-system-${NAMESPACE}.dominicsheytanya.org  
       http:
         paths:
-        - backend:
-            service:
-              name: solar-system
-              port:
-                number: 3000
-          path: /
-          pathType: Prefix
-    tls:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: solar-system
+                port:
+                  number: 3000
+  tls:
     - hosts:
-      - solar-system-${NAMESPACE}.${INGRESS_IP}.nip.io
+        - solar-system-${NAMESPACE}.dominicsheytanya.org
       secretName: ingress-local-tls
