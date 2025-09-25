@@ -111,7 +111,7 @@ jobs:
         env:  
           JF_URL: ${{ vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
-        #   # JF_GIT_TOKEN: ${{ secrets._GITHUB_TOKEN }}
+        #   # JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # with:
         #   oidc-provider-name: github-jfrog-intragration 
         #   oidc-audience: my-aud
@@ -121,7 +121,7 @@ jobs:
 
       - name: Set CLI Config
         run: | 
-          jf npm-config --global=true --repo-resolve=solar-system-local --repo-deploy=solar-system-local
+          jf npm-config --global=true --repo-resolve=virtual-solar-system --repo-deploy=local-solar-system
           
       - name: Install Deps
         run: jf npm install
