@@ -297,7 +297,7 @@ jobs:
     steps:
       - name: Test `/live` Endpoint
         env:
-           INGRESS_HOST: ${{ needs.dev-deploy.outputs.alb_host }}
+           INGRESS_HOST: solar-system-dev.dominicsheytanya.org  #${{ needs.dev-deploy.outputs.alb_host }}
         run: |
           echo "Testing endpoint: http://$INGRESS_HOST/live"
 
