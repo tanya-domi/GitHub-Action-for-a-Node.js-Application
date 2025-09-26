@@ -290,26 +290,26 @@ jobs:
           done
           echo "alb-host=$HOST" >> $GITHUB_OUTPUT
 
-  # integration-testing:
-  #   name: Dev Integration Testing
-  #   needs: dev-deploy
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Test `/live` Endpoint
-  #       env:
-  #          INGRESS_HOST: ${{ needs.dev-deploy.outputs.alb_host }}
-  #       run: |
-  #         echo "Testing endpoint: http://$INGRESS_HOST/live"
+  integration-testing:
+    name: Dev Integration Testing
+    needs: dev-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test `/live` Endpoint
+        env:
+           INGRESS_HOST: ${{ needs.dev-deploy.outputs.alb_host }}
+        run: |
+          echo "Testing endpoint: http://$INGRESS_HOST/live"
 
-  #          for i in {1..10}; do
-  #            if curl -sf http://$INGRESS_HOST/live; then
-  #              echo "Live endpoint is healthy"
-  #              exit 0
-  #            fi
-  #            echo "⏳ Waiting for /live endpoint..."
-  #            sleep 10
-  #         done
+           for i in {1..10}; do
+             if curl -sf http://$INGRESS_HOST/live; then
+               echo "Live endpoint is healthy"
+               exit 0
+             fi
+             echo "⏳ Waiting for /live endpoint..."
+             sleep 10
+          done
         
-  #         echo "Failed to reach /live endpoint at http://$INGRESS_HOST/live"
-  #         exit 1
-  ##
+          echo "Failed to reach /live endpoint at http://$INGRESS_HOST/live"
+          exit 1
+  
