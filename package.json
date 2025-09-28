@@ -1,8 +1,8 @@
 {
-  "name": "Solar System",
+  "name": "solar-system",
   "version": "6.7.6",
-  "author": "Siddharth Barahalikar <barahalikar.siddharth@gmail.com>",
-  "homepage": "https://www.linkedin.com/in/barahalikar-siddharth/",
+  "author": "Tanya Dominic <sheytanyadominic@gmail.com>",
+  "homepage": "https://www.linkedin.com/in/tanyadominics/",
   "license": "MIT",
   "scripts": {
     "start": "node app.js",
@@ -13,12 +13,14 @@
     "check-coverage": true,
     "lines": 90
   },
+  "publishConfig":{"registry":"http://51.21.202.116:8081/artifactory/api/npm/local-solar-system/"},
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "mocha-junit-reporter": "^2.2.1",
     "mongoose": "5.13.20",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "yocto-queue": "^0.1.0"
   },
   "devDependencies": {
     "chai": "*",
