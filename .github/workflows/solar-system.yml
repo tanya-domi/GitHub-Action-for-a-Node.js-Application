@@ -92,20 +92,67 @@ jobs:
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: Code-Coverage-Result
           path: coverage/
           retention-days: 5
+
+  sonarqube:
+    name: Code Quality Analysis
+    needs: [unit-testing, code-coverage]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # better analysis history
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Download Test Results
+        uses: actions/download-artifact@v4
+        with:
+          name: Mocha-Test-Result-18-ubuntu-latest
+          path: .
+
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v4
+        with:
+          name: Code-Coverage-Result
+          path: coverage/
+
+      - name: Verify reports
+        run: |
+          ls -R .
+          test -f coverage/lcov.info || echo "Coverage report missing!"
+          test -f test-results.xml || echo "Test results missing!"
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        with:
+          args: >
+            -Dsonar.projectKey=solar-system
+            -Dsonar.projectName=solar-system
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.testExecutionReportPaths=test-results.xml
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
 
   publish-build:
     runs-on: ubuntu-latest
     needs: [unit-testing, code-coverage]
+    continue-on-error: true
  
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Clean npmrc
-        run: rm -f ~/.npmrc
 
       - name: Setup JFrog CLI OIDC
         uses:  jfrog/setup-jfrog-cli@v4
@@ -113,11 +160,6 @@ jobs:
         env:  
           JF_URL: ${{ vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
-
-        #   # JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # with:
-        #   oidc-provider-name: github-jfrog-intragration 
-        #   oidc-audience: my-aud
            
       - name: Setup Node npm
         uses: actions/setup-node@v4
@@ -125,30 +167,28 @@ jobs:
       - name: Set CLI Config
         run: | 
           jf npm-config --global=true --repo-resolve=virtual-solar-system --repo-deploy=local-solar-system
-          
-      - name: Install Deps
-        run: jf npm install
-         
-      - name: Publish Package to Artifactory
-        run: jf npm publish
 
-      - name: Download Test Results Artifact
+      - name: Download Mocha Test Artifact
         uses: actions/download-artifact@v4
         with:
           name: Mocha-Test-Result-18-ubuntu-latest
-          path: reports/unit-tests
 
       - name: Download Coverage Report Artifact
         uses: actions/download-artifact@v4
         with:
-          name: coverage-report
-          path: reports/coverage
+          name: Code-Coverage-Result
+
+      - name: Organize reports
+        run: |
+          mkdir -p reports/unit-tests reports/coverage
+          mv test-results.xml reports/unit-tests/ || true
+          mv cobertura-coverage.xml reports/coverage/ || true
 
       - name: Upload Test Results & Coverage to Artifactory
         run: |
           jf rt u "reports/unit-tests/*" "local-solar-system/unit-tests/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
           jf rt u "reports/coverage/*" "local-solar-system/coverage/" --build-name=solar-system --build-number=$GITHUB_RUN_NUMBER
-         
+
       - name: Publish Build info With JFrog CLI
         run: |
           # Collect environment variables for the build
@@ -157,6 +197,7 @@ jobs:
           jf rt build-add-git
           # Publish build info
           jf rt build-publish
+
 
   docker:
     name: Containerization
@@ -234,13 +275,21 @@ jobs:
 
       
   dev-deploy:
-    runs-on: ubuntu-latest
+    if: contains(github.ref, 'feature/')
     needs: push-image
+    environment: 
+      name: development
+      url: https://${{ steps.fetch-alb-host.outputs.ALB_HOST }}
+
     outputs:
       alb_host: ${{ steps.deploy.outputs.alb_host }}
+
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Deploy to Development
+        run: |
+          echo "Using NAMESPACE=${{ vars.NAMESPACE }} and replicas=${{ vars.REPLICAS }}"
 
       - name: Configure AWS Credentials with OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -255,6 +304,94 @@ jobs:
 
       - name: Configure kubectl
         run: aws eks --region eu-north-1 update-kubeconfig --name hr-dev-eks-cloud
+      
+      - name: Update K8s manifests with image tag
+        run: |
+          sed -i "s|<commit-sha>|${{ github.sha }}|g" kubernetes/development/deployment.yaml
+
+      - name: Verify updated manifests
+        run: |
+          cat kubernetes/development/*.yaml
+
+      - name: Create MongoDB Secret
+        run: |
+          kubectl -n dev create secret generic mongo-db-creds \
+            --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
+            --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \
+            --from-literal=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+            --save-config \
+            --dry-run=client \
+            -o yaml | kubectl apply -f -
+
+      - name: Deploy to Dev Environment
+        run: |
+          kubectl apply -f kubernetes/development
+
+      - name: Fetch ALB Host
+        id: fetch-alb-host
+        run: |
+          for i in {1..20}; do
+            HOST=$(kubectl -n dev get ingress solar-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "$HOST" ]; then break; fi
+            echo "Waiting for ALB DNS..."
+            sleep 15
+          done
+          echo "ALB_HOST=$HOST" >> $GITHUB_OUTPUT
+
+  integration-testing:
+    name: Dev Integration Testing
+    if: contains(github.ref, 'feature/')
+    needs: dev-deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test `/live` Endpoint
+        env:
+           INGRESS_HOST: solar-system-dev.dominicsheytanya.org  
+        run: |
+          echo "Testing endpoint: http://$INGRESS_HOST/live"
+
+           for i in {1..10}; do
+             if curl -sf http://$INGRESS_HOST/live; then
+               echo "Live endpoint is healthy"
+               exit 0
+             fi
+             echo " Waiting for /live endpoint..."
+             sleep 10
+          done
+        
+          echo "Failed to reach /live endpoint at http://$INGRESS_HOST/live"
+          exit 1
+  
+      
+  prod-deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: push-image
+    environment: 
+      name: production
+    outputs:
+      alb_host: ${{ steps.deploy.outputs.alb_host }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to production
+        run: |
+          echo "Using NAMESPACE=${{ vars.NAMESPACE }} and replicas=${{ vars.REPLICAS }}"
+
+      - name: Configure AWS Credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.CI_ROLE }}
+          aws-region: eu-north-1
+
+      - name: Install kubectl CLI
+        uses: azure/setup-kubectl@v3
+        with:
+           version: 'v1.26.0'
+
+      - name: Configure kubectl
+        run: aws eks --region eu-north-1 update-kubeconfig --name dev-eks-cloud
       
       - name: Update K8s manifests with image tag
         run: |
@@ -290,14 +427,16 @@ jobs:
           done
           echo "alb-host=$HOST" >> $GITHUB_OUTPUT
 
-  integration-testing:
-    name: Dev Integration Testing
-    needs: dev-deploy
+  prod-integration-testing:
+    name: Prod Integration Testing
+    if: github.ref == 'refs/heads/main'
+    needs: prod-deploy
+
     runs-on: ubuntu-latest
     steps:
       - name: Test `/live` Endpoint
         env:
-           INGRESS_HOST: solar-system-dev.dominicsheytanya.org  #${{ needs.dev-deploy.outputs.alb_host }}
+           INGRESS_HOST: solar-system-dev.dominicsheytanya.org  
         run: |
           echo "Testing endpoint: http://$INGRESS_HOST/live"
 

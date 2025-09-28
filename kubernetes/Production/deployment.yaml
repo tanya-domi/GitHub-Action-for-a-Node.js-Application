@@ -4,9 +4,9 @@ metadata:
   labels:
     app: solar-system
   name: solar-system
-  namespace: ${NAMESPACE}
+  namespace: prod
 spec:
-  replicas: ${REPLICAS}
+  replicas: 5
   selector:
     matchLabels:
       app: solar-system
@@ -17,7 +17,7 @@ spec:
         app: solar-system
     spec:
       containers:
-      - image: ${K8S_IMAGE}
+      - image: dts81/solar-system:<commit-sha>
         imagePullPolicy: Always
         name: solar-system
         ports:
