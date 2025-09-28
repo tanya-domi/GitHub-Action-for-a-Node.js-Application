@@ -12,7 +12,7 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: solar-system-prod.dominicsheytanya.org
+    - host: solar-system-prod
       http:
         paths:
           - path: /
