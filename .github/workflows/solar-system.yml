@@ -303,7 +303,7 @@ jobs:
            version: 'v1.26.0'
 
       - name: Configure kubectl
-        run: aws eks --region eu-north-1 update-kubeconfig --name dev-eks-cloud
+        run: aws eks --region eu-north-1 update-kubeconfig --name my-eks-cluster
       
       - name: Update K8s manifests with image tag
         run: |
