@@ -313,30 +313,30 @@ jobs:
         run: |
           cat kubernetes/development/*.yaml
 
-      # - name: Create MongoDB Secret
-      #   run: |
-      #     kubectl -n dev create secret generic mongo-db-creds \
-      #       --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
-      #       --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \
-      #       --from-literal=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
-      #       --save-config \
-      #       --dry-run=client \
-      #       -o yaml | kubectl apply -f -
+      - name: Create MongoDB Secret
+        run: |
+          kubectl -n dev create secret generic mongo-db-creds \
+            --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
+            --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \
+            --from-literal=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+            --save-config \
+            --dry-run=client \
+            -o yaml | kubectl apply -f -
 
       - name: Deploy to Dev Environment
         run: |
           kubectl apply -f kubernetes/development
 
-      - name: Fetch ALB Host
-        id: fetch-alb-host
-        run: |
-          for i in {1..20}; do
-            HOST=$(kubectl -n dev get ingress solar-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            if [ -n "$HOST" ]; then break; fi
-            echo "Waiting for ALB DNS..."
-            sleep 15
-          done
-          echo "ALB_HOST=$HOST" >> $GITHUB_OUTPUT
+      # - name: Fetch ALB Host
+      #   id: fetch-alb-host
+      #   run: |
+      #     for i in {1..20}; do
+      #       HOST=$(kubectl -n dev get ingress solar-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+      #       if [ -n "$HOST" ]; then break; fi
+      #       echo "Waiting for ALB DNS..."
+      #       sleep 15
+      #     done
+      #     echo "ALB_HOST=$HOST" >> $GITHUB_OUTPUT
 
   # integration-testing:
   #   name: Dev Integration Testing
