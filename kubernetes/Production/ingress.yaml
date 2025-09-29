@@ -8,11 +8,11 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:381492137122:certificate/209f1a32-323f-4fce-86d7-e98175af4216
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:381492137122:certificate/4a115c36-439e-4981-8be2-6020324e3400
 spec:
   ingressClassName: alb
   rules:
-    - host: solar-system-dev.dominicsheytanya.org
+    - host: solar-system-prod.dominicsheytanya.org
       http:
         paths:
           - path: /
