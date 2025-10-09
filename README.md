@@ -38,7 +38,9 @@ All build artifacts are uploaded and versioned in Artifactory for reference and 
 # integrating Jfrog Artifactory with Github
 ![Image](https://github.com/user-attachments/assets/9297b418-5ce1-4625-9174-a9fdcc1a9c3d)
 
-4. Deployment to EKS
+4. We containerize our applications and validate image integrity and functionality before pushing them to the Docker registry. As part of our CI/CD pipeline, all Docker images undergo automated security scanning to detect vulnerabilities and ensure compliance with organizational standards. Additionally, images are re-scanned prior to deployment to production to maintain a secure and trusted runtime environment
+
+5. Deployment to EKS
 Once the build and testing stages are successful, the application is deployed to the development environment within a dedicated Kubernetes namespace (e.g., dev).
 
 Post-deployment, integration tests are executed to verify:
