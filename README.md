@@ -52,4 +52,7 @@ Connectivity with the external MongoDB database (read/write validation).
 
 Successful completion of these stages ensures that the application is production-ready, secure, and fully validated before being promoted to higher environments.
 
+[![Watch the video](https://img.youtube.com/vi/2h8u8PYVMnU/maxresdefault.jpg)](https://www.youtube.com/watch?v=2h8u8PYVMnU)
+
+
 
